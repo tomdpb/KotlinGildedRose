@@ -1,55 +1,48 @@
 package guru.drako.examples.gildedrose
 
 class Shop(val items: List<Item>) {
-  fun updateQuality() {
-    for (item in items) {
-      if (item.name != "Aged Brie" && item.name != "Backstage passes to a TAFKAL80ETC concert") {
-        if (item.quality > 0) {
-          if (item.name != "Sulfuras, Hand of Ragnaros") {
-            --item.quality
-          }
-        }
-      } else {
-        if (item.quality < 50) {
-          ++item.quality
 
-          if (item.name == "Backstage passes to a TAFKAL80ETC concert") {
-            if (item.sellIn < 11) {
-              if (item.quality < 50) {
-                ++item.quality
-              }
-            }
+  private val minQuality = 0
+  private val maxQuality = 50
 
-            if (item.sellIn < 6) {
-              if (item.quality < 50) {
-                ++item.quality
-              }
-            }
-          }
-        }
+  private fun updateStandardItem(item: Item){
+    //quality decreases by two if the sell in date has passed
+    if (item.sellIn == 0){
+      item.quality = (item.quality - 2).coerceIn(minQuality, maxQuality)
+
+    } else {
+      item.quality = (item.quality - 1).coerceIn(minQuality, maxQuality)
+    }
+  }
+  private fun updateAgedBrieItem(item: Item){
+    //quality increases as it ages
+    item.quality = (item.quality + 1).coerceIn(minQuality, maxQuality)
+  }
+  private fun updateBackstageItem(item: Item){
+    //quality changes based on how many days are left to the concert
+    when {
+      item.sellIn <= 0  -> item.quality = 0
+      item.sellIn <= 5  -> item.quality = (item.quality + 3).coerceIn(minQuality, maxQuality)
+      item.sellIn <= 10 -> item.quality = (item.quality + 2).coerceIn(minQuality, maxQuality)
+      else              -> item.quality = (item.quality + 1).coerceIn(minQuality, maxQuality)
+    }
+  }
+  private fun updateConjuredItem(item: Item){
+    //quality simply degrades twice as fast as a standard item
+    updateStandardItem(item)
+    updateStandardItem(item)
+  }
+
+  fun updateQuality(){
+    loop@ for (item in items){
+      when {
+        item.name.contains("Sulfuras", ignoreCase = true) -> continue@loop //legendary item. Do nothing
+        item.name.contains("Aged Brie", ignoreCase = true) -> updateAgedBrieItem(item)
+        item.name.contains("Backstage passes", ignoreCase = true) -> updateBackstageItem(item)
+        item.name.contains("Conjured", ignoreCase = true) -> updateConjuredItem(item)
+        else -> updateStandardItem(item)
       }
-
-      if (item.name != "Sulfuras, Hand of Ragnaros") {
-        --item.sellIn
-      }
-
-      if (item.sellIn < 0) {
-        if (item.name != "Aged Brie") {
-          if (item.name != "Backstage passes to a TAFKAL80ETC concert") {
-            if (item.quality > 0) {
-              if (item.name != "Sulfuras, Hand of Ragnaros") {
-                --item.quality
-              }
-            }
-          } else {
-            item.quality -= item.quality
-          }
-        } else {
-          if (item.quality < 50) {
-            ++item.quality
-          }
-        }
-      }
+      item.sellIn--
     }
   }
 }
